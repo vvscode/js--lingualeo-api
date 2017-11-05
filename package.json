@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/vvscode/js--lingualeo-api/issues"
   },
-  "homepage": "https://github.com/vvscode/js--lingualeo-api#readme"
+  "homepage": "https://github.com/vvscode/js--lingualeo-api#readme",
+  "dependencies": {
+    "superagent": "^3.8.0"
+  }
 }
