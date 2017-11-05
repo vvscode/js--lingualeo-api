@@ -1,0 +1,23 @@
+{
+  "name": "lingualeo-api",
+  "version": "0.0.0",
+  "description": "Wrapper to provide API for Lingualeo.ru functionality",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vvscode/js--lingualeo-api.git"
+  },
+  "keywords": [
+    "api",
+    "lingualeo"
+  ],
+  "author": "vvscode",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vvscode/js--lingualeo-api/issues"
+  },
+  "homepage": "https://github.com/vvscode/js--lingualeo-api#readme"
+}
