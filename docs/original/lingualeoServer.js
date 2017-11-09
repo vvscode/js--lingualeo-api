@@ -87,166 +87,207 @@ var lingualeo = {
 };
 
 var LingualeoServer = function(apiUrl, targetLanguage) {
-  function e(a, c) {
-    l("POST", lingualeo.addArgumentsToUrl(a, { port: m }), c);
+  function postAjaxData(url, c) {
+    makeAjaxRequest(
+      "POST",
+      lingualeo.addArgumentsToUrl(url, { port: port }),
+      c
+    );
   }
-  function l(a, c, b) {
-    if ("undefined" === typeof b.params || null === b.params) b.params = {};
-    b.params.port = m;
+  function makeAjaxRequest(method, url, options) {
+    if ("undefined" === typeof options.params || null === options.params)
+      options.params = {};
+    options.params.port = port;
     kango.xhr.send(
       {
-        method: a,
-        url: c,
+        method: method,
+        url: url,
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "LinguaLeo-Version": q,
-          "X-Accept-Language": n
+          "LinguaLeo-Version": version,
+          "X-Accept-Language": targetLanguage
         },
-        params: b.params
+        params: options.params
       },
-      function(a) {
-        var d;
-        if (200 !== a.status) {
-          d = { error: !0, error_msg: "Response status error: " + a.status };
-          k.responseStatusErrorHandler &&
-            k.responseStatusErrorHandler(a.status, b.isSilentError);
-          if (b.onError) b.onError(d.error_msg, null, a.status);
-          if (b.onComplete) b.onComplete(d);
-        } else if (b.isTextResponse) {
-          d = { text: a.response || "" };
-          if (b.onSuccess) b.onSuccess(d);
-          if (b.onComplete) b.onComplete(d);
+      function(xhr) {
+        var data;
+        if (200 !== xhr.status) {
+          data = {
+            error: !0,
+            error_msg: "Response status error: " + xhr.status
+          };
+          selfLingualeoServer.responseStatusErrorHandler &&
+            selfLingualeoServer.responseStatusErrorHandler(
+              xhr.status,
+              options.isSilentError
+            );
+          if (options.onError)
+            options.onError(data.error_msg, null, xhr.status);
+          if (options.onComplete) options.onComplete(data);
+        } else if (options.isTextResponse) {
+          data = { text: xhr.response || "" };
+          if (options.onSuccess) options.onSuccess(data);
+          if (options.onComplete) options.onComplete(data);
         } else {
           try {
-            d = JSON.parse(a.response);
+            data = JSON.parse(xhr.response);
           } catch (c) {
-            d = { error_code: 27051983, error_msg: "Wrong server response." };
+            data = {
+              error_code: 27051983,
+              error_msg: "Wrong server response."
+            };
           }
-          if (d.error_code) {
+          if (data.error_code) {
             if (
-              (k.responseErrorHandler &&
-                k.responseErrorHandler(
-                  d.error_msg,
-                  d.error_code,
-                  b.isSilentError
+              (selfLingualeoServer.responseErrorHandler &&
+                selfLingualeoServer.responseErrorHandler(
+                  data.error_msg,
+                  data.error_code,
+                  options.isSilentError
                 ),
-              b.onError)
+              options.onError)
             )
-              b.onError(d.error_msg, d, a.status);
-          } else if (b.onSuccess) b.onSuccess(d || {});
-          if (b.onComplete) b.onComplete(d || {});
+              options.onError(data.error_msg, data, xhr.status);
+          } else if (options.onSuccess) options.onSuccess(data || {});
+          if (options.onComplete) options.onComplete(data || {});
         }
       }
     );
   }
-  var k = this,
-    n = targetLanguage || "ru",
-    m = kango.getExtensionInfo().settings.port,
-    q = kango.getExtensionInfo().version;
+  var selfLingualeoServer = this,
+    targetLanguage = targetLanguage || "ru",
+    port = kango.getExtensionInfo().settings.port,
+    version = kango.getExtensionInfo().version;
   this.responseErrorHandler = this.responseStatusErrorHandler = null;
-  this.setUserLocale = function(a) {
-    n = a || "ru";
+  this.setUserLocale = function(locale) {
+    targetLanguage = locale || "ru";
   };
-  this.loadTranslations = function(a, c, b) {
-    e(apiUrl + lingualeo.config.ajax.getTranslations, {
+  this.loadTranslations = function(a, onSuccess, onError) {
+    postAjaxData(apiUrl + lingualeo.config.ajax.getTranslations, {
       isSilentError: !1,
       params: {
         word: a.replace(/&/g, "%26"),
         include_media: 1,
         add_word_forms: 1
       },
-      onSuccess: c,
-      onError: b
+      onSuccess: onSuccess,
+      onError: onError
     });
   };
-  this.setWordTranslation = function(a, c, b, f, d, h, k) {
-    e(apiUrl + lingualeo.config.ajax.addWordToDict, {
+  this.setWordTranslation = function(
+    word,
+    tword,
+    context,
+    context_url,
+    context_title,
+    onSuccess,
+    onError
+  ) {
+    postAjaxData(apiUrl + lingualeo.config.ajax.addWordToDict, {
       isSilentError: !1,
       params: {
-        word: a,
-        tword: c,
-        context: b || "",
-        context_url: f,
-        context_title: d
+        word: word,
+        tword: tword,
+        context: context || "",
+        context_url: context_url,
+        context_title: context_title
       },
-      onSuccess: h,
-      onError: k
+      onSuccess: onSuccess,
+      onError: onError
     });
   };
-  this.setWordTranslationMultiple = function(a, c, b) {
-    for (var f = [], d = 0, h; (h = a[d]); d++)
-      (f["words[" + d + "][word]"] = h.word),
-        (f["words[" + d + "][tword]"] = h.tword),
-        (f["words[" + d + "][context]"] = h.context),
-        (f["words[" + d + "][context_url]"] = h.context_url),
-        (f["words[" + d + "][context_title]"] = h.context_title);
-    e(apiUrl + lingualeo.config.ajax.addWordToDictMultiple, {
+  this.setWordTranslationMultiple = function(a, onSuccess, onError) {
+    for (var params = [], d = 0, h; (h = a[d]); d++)
+      (params["words[" + d + "][word]"] = h.word),
+        (params["words[" + d + "][tword]"] = h.tword),
+        (params["words[" + d + "][context]"] = h.context),
+        (params["words[" + d + "][context_url]"] = h.context_url),
+        (params["words[" + d + "][context_title]"] = h.context_title);
+    postAjaxData(apiUrl + lingualeo.config.ajax.addWordToDictMultiple, {
       isSilentError: !0,
-      params: f,
-      onSuccess: c,
-      onError: b
+      params: params,
+      onSuccess: onSuccess,
+      onError: onError
     });
   };
-  this.translateCustomText = function(a, c, b, f) {
-    a = {
+  this.translateCustomText = function(customText, source, target, onComplete) {
+    customText = {
       isSilentError: !0,
-      params: { q: encodeURIComponent(a), source: c, target: b },
-      onComplete: f
+      params: {
+        q: encodeURIComponent(customText),
+        source: source,
+        target: target
+      },
+      onComplete: onComplete
     };
-    l("GET", apiUrl + lingualeo.config.ajax.translate, a);
-  };
-  this.checkAuthorization = function(a, c, b) {
-    e(apiUrl + lingualeo.config.ajax.isAuth, {
-      isSilentError: a,
-      onSuccess: function(a) {
-        c && c(a.is_authorized);
-      },
-      onError: b
-    });
-  };
-  this.getUntrainedWordsCount = function(a, c) {
-    e(apiUrl + lingualeo.config.ajax.getUntrainedWordsCount, {
-      isSilentError: !0,
-      onSuccess: a,
-      onError: c
-    });
-  };
-  this.setCookieWithServer = function(a) {
-    e(apiUrl + lingualeo.config.ajax.setChromeHideCookie, {
-      isSilentError: !0,
-      onSuccess: a
-    });
-  };
-  this.login = function(a, c, b) {
-    e(apiUrl + lingualeo.config.ajax.login, {
-      isSilentError: !0,
-      params: { email: encodeURIComponent(a), password: encodeURIComponent(c) },
-      onComplete: b
-    });
-  };
-  this.getUserData = function(a) {
-    e(apiUrl + lingualeo.config.ajax.login, {
-      isSilentError: !0,
-      onComplete: a
-    });
-  };
-  this.checkSiteNotifications = function(a, c) {
-    var b = lingualeo.config.ajax.checkSiteNotifications.replace(
-      "{user_id}",
-      a
+    makeAjaxRequest(
+      "GET",
+      apiUrl + lingualeo.config.ajax.translate,
+      customText
     );
-    l("GET", b, { isSilentError: !0, onSuccess: c });
   };
-  this.getYoutubeCaptionsInfo = function(a, c) {
-    e(a, {
+  this.checkAuthorization = function(isSilentError, onSuccess, onError) {
+    postAjaxData(apiUrl + lingualeo.config.ajax.isAuth, {
+      isSilentError: isSilentError,
+      onSuccess: function(a) {
+        onSuccess && onSuccess(a.is_authorized);
+      },
+      onError: onError
+    });
+  };
+  this.getUntrainedWordsCount = function(onSuccess, onError) {
+    postAjaxData(apiUrl + lingualeo.config.ajax.getUntrainedWordsCount, {
+      isSilentError: !0,
+      onSuccess: onSuccess,
+      onError: onError
+    });
+  };
+  this.setCookieWithServer = function(onSuccess) {
+    postAjaxData(apiUrl + lingualeo.config.ajax.setChromeHideCookie, {
+      isSilentError: !0,
+      onSuccess: onSuccess
+    });
+  };
+  this.login = function(email, password, onComplete) {
+    postAjaxData(apiUrl + lingualeo.config.ajax.login, {
+      isSilentError: !0,
+      params: {
+        email: encodeURIComponent(email),
+        password: encodeURIComponent(password)
+      },
+      onComplete: onComplete
+    });
+  };
+  this.getUserData = function(onComplete) {
+    postAjaxData(apiUrl + lingualeo.config.ajax.login, {
+      isSilentError: !0,
+      onComplete: onComplete
+    });
+  };
+  this.checkSiteNotifications = function(userId, onSuccess) {
+    var url = lingualeo.config.ajax.checkSiteNotifications.replace(
+      "{user_id}",
+      userId
+    );
+    makeAjaxRequest("GET", url, { isSilentError: !0, onSuccess: onSuccess });
+  };
+  this.getYoutubeCaptionsInfo = function(url, onComplete) {
+    postAjaxData(url, {
       isTextResponse: !0,
-      onComplete: c
+      onComplete: onComplete
     });
   };
-  this.exportYoutubeContentToJungle = function(a, c, b) {
-    e(lingualeo.config.domain + lingualeo.config.path.youtubeExport, {
-      params: { contentEmbed: a, genreId: c },
-      onComplete: b
-    });
+  this.exportYoutubeContentToJungle = function(
+    contentEmbed,
+    genreId,
+    onComplete
+  ) {
+    postAjaxData(
+      lingualeo.config.domain + lingualeo.config.path.youtubeExport,
+      {
+        params: { contentEmbed: contentEmbed, genreId: genreId },
+        onComplete: onComplete
+      }
+    );
   };
 };
