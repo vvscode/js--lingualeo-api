@@ -6,11 +6,11 @@
  * @param {*} currentLanguage 'ru'
  */
 const lingualeo = {
-  addArgumentsToUrl(a, b = {}) {
-    const c = Object.keys(b)
-      .map(a => `${a}=${encodeURIComponent(b[a])}`)
+  addArgumentsToUrl(url, args = {}) {
+    const c = Object.keys(args)
+      .map(a => `${a}=${encodeURIComponent(args[a])}`)
       .join("&");
-    return c ? a + this.getQueryParamsDelimiter(a) + c : a;
+    return c ? url + this.getQueryParamsDelimiter(url) + c : url;
   },
   config: {
     debug: !1,
@@ -83,11 +83,17 @@ const lingualeo = {
   }
 };
 
-const LingualeoServer = function(apiUrl, targetLanguage) {
-  function postAjaxData(url, c) {
-    makeAjaxRequest("POST", lingualeo.addArgumentsToUrl(url, { port }), c);
-  }
-  function makeAjaxRequest(method, url, options) {
+const LingualeoServer = function(
+  apiUrl = "http://api.lingualeo.com",
+  targetLanguage = "ru"
+) {
+  const postAjaxData = (url, options) =>
+    makeAjaxRequest(
+      "POST",
+      lingualeo.addArgumentsToUrl(url, { port }),
+      options
+    );
+  const makeAjaxRequest = (method, url, options) => {
     if ("undefined" === typeof options.params || null === options.params)
       options.params = {};
     options.params.port = port;
@@ -109,11 +115,8 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
             error: !0,
             error_msg: `Response status error: ${xhr.status}`
           };
-          selfLingualeoServer.responseStatusErrorHandler &&
-            selfLingualeoServer.responseStatusErrorHandler(
-              xhr.status,
-              options.isSilentError
-            );
+          this.responseStatusErrorHandler &&
+            this.responseStatusErrorHandler(xhr.status, options.isSilentError);
           if (options.onError)
             options.onError(data.error_msg, null, xhr.status);
           if (options.onComplete) options.onComplete(data);
@@ -132,8 +135,8 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
           }
           if (data.error_code) {
             if (
-              (selfLingualeoServer.responseErrorHandler &&
-                selfLingualeoServer.responseErrorHandler(
+              (this.responseErrorHandler &&
+                this.responseErrorHandler(
                   data.error_msg,
                   data.error_code,
                   options.isSilentError
@@ -146,16 +149,14 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
         }
       }
     );
-  }
-  var selfLingualeoServer = this;
-  const targetLanguage = targetLanguage || "ru";
+  };
   var port = kango.getExtensionInfo().settings.port;
   var version = kango.getExtensionInfo().version;
   this.responseErrorHandler = this.responseStatusErrorHandler = null;
   this.setUserLocale = locale => {
     targetLanguage = locale || "ru";
   };
-  this.loadTranslations = (a, onSuccess, onError) => {
+  this.loadTranslations = (a, onSuccess, onError) =>
     postAjaxData(apiUrl + lingualeo.config.ajax.getTranslations, {
       isSilentError: !1,
       params: {
@@ -166,7 +167,6 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
       onSuccess,
       onError
     });
-  };
   this.setWordTranslation = (
     word,
     tword,
@@ -175,7 +175,7 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
     context_title,
     onSuccess,
     onError
-  ) => {
+  ) =>
     postAjaxData(apiUrl + lingualeo.config.ajax.addWordToDict, {
       isSilentError: !1,
       params: {
@@ -188,7 +188,6 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
       onSuccess,
       onError
     });
-  };
   this.setWordTranslationMultiple = (a, onSuccess, onError) => {
     for (var params = [], d = 0, h; (h = a[d]); d++)
       (params[`words[${d}][word]`] = h.word),
@@ -203,8 +202,8 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
       onError
     });
   };
-  this.translateCustomText = (customText, source, target, onComplete) => {
-    customText = {
+  this.translateCustomText = (customText, source, target, onComplete) =>
+    makeAjaxRequest("GET", apiUrl + lingualeo.config.ajax.translate, {
       isSilentError: !0,
       params: {
         q: encodeURIComponent(customText),
@@ -212,14 +211,8 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
         target
       },
       onComplete
-    };
-    makeAjaxRequest(
-      "GET",
-      apiUrl + lingualeo.config.ajax.translate,
-      customText
-    );
-  };
-  this.checkAuthorization = (isSilentError, onSuccess, onError) => {
+    });
+  this.checkAuthorization = (isSilentError, onSuccess, onError) =>
     postAjaxData(apiUrl + lingualeo.config.ajax.isAuth, {
       isSilentError,
       onSuccess(a) {
@@ -227,21 +220,18 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
       },
       onError
     });
-  };
-  this.getUntrainedWordsCount = (onSuccess, onError) => {
+  this.getUntrainedWordsCount = (onSuccess, onError) =>
     postAjaxData(apiUrl + lingualeo.config.ajax.getUntrainedWordsCount, {
       isSilentError: !0,
       onSuccess,
       onError
     });
-  };
-  this.setCookieWithServer = onSuccess => {
+  this.setCookieWithServer = onSuccess =>
     postAjaxData(apiUrl + lingualeo.config.ajax.setChromeHideCookie, {
       isSilentError: !0,
       onSuccess
     });
-  };
-  this.login = (email, password, onComplete) => {
+  this.login = (email, password, onComplete) =>
     postAjaxData(apiUrl + lingualeo.config.ajax.login, {
       isSilentError: !0,
       params: {
@@ -250,13 +240,11 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
       },
       onComplete
     });
-  };
-  this.getUserData = onComplete => {
+  this.getUserData = onComplete =>
     postAjaxData(apiUrl + lingualeo.config.ajax.login, {
       isSilentError: !0,
       onComplete
     });
-  };
   this.checkSiteNotifications = (userId, onSuccess) => {
     const url = lingualeo.config.ajax.checkSiteNotifications.replace(
       "{user_id}",
@@ -264,13 +252,12 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
     );
     makeAjaxRequest("GET", url, { isSilentError: !0, onSuccess });
   };
-  this.getYoutubeCaptionsInfo = (url, onComplete) => {
+  this.getYoutubeCaptionsInfo = (url, onComplete) =>
     postAjaxData(url, {
       isTextResponse: !0,
       onComplete
     });
-  };
-  this.exportYoutubeContentToJungle = (contentEmbed, genreId, onComplete) => {
+  this.exportYoutubeContentToJungle = (contentEmbed, genreId, onComplete) =>
     postAjaxData(
       lingualeo.config.domain + lingualeo.config.path.youtubeExport,
       {
@@ -278,5 +265,4 @@ const LingualeoServer = function(apiUrl, targetLanguage) {
         onComplete
       }
     );
-  };
 };
