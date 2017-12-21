@@ -10,10 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/vvscode/js--lingualeo-api.git"
   },
-  "keywords": [
-    "api",
-    "lingualeo"
-  ],
+  "keywords": ["api", "lingualeo"],
   "author": "vvscode",
   "license": "ISC",
   "bugs": {
