@@ -6,11 +6,19 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vvscode/js--lingualeo-api.git"
   },
-  "keywords": ["api", "lingualeo"],
+  "keywords": [
+    "api",
+    "lingualeo"
+  ],
   "author": "vvscode",
   "license": "ISC",
   "bugs": {
@@ -19,5 +27,11 @@
   "homepage": "https://github.com/vvscode/js--lingualeo-api#readme",
   "dependencies": {
     "superagent": "3.8.0"
+  },
+  "devDependencies": {
+    "husky": "^1.1.1",
+    "lint-staged": "^7.3.0",
+    "prettier": "1.14.3",
+    "pretty-quick": "^1.7.0"
   }
 }
