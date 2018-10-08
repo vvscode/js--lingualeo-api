@@ -4,4 +4,4 @@ node_js:
 jobs:
   include:
     - stage: test
-      script: ./test.run.js
+      script: npm test
